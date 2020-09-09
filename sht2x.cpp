@@ -173,10 +173,10 @@ float SHT2::CalcTemperatureC(uint16_t u16sT)
 {
   float temperatureC;            // variable for result
 
-  u16sT &= ~0x0003;           // clear bits [1..0] (status bits)
-
+  //u16sT &= ~0x0003;           // clear bits [1..0] (status bits)
+  u16sT >>= 2;
   //-- calculate temperature [°C] --
-  temperatureC= -46.85 + 175.72/65536 *(float)u16sT; //T= -46.85 + 175.72 * ST/2^16
+  temperatureC= -46.85 + 0.010725098 *(float)u16sT; //T= -46.85 + 175.72 * ST/2^16
   return temperatureC;
 }
 
