@@ -219,14 +219,6 @@ uint8_t SHT2::SoftReset()
   */
 }
 
-/** @brief (one liner)
-  *
-  * (documentation goes here)
-  */
-uint8_t SHT2::MeasureHM(etSHT2xMeasureType eSHT2xMeasureType, int16_t* pMeasurand)
-{
-
-}
 
 /** @brief (one liner)
   *

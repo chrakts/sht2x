@@ -66,7 +66,6 @@ class SHT2
     uint8_t WriteUserRegister(uint8_t pRegisterValue);
     uint8_t startMeasurementPoll(etSHT2xMeasureType eSHT2xMeasureType);
     uint8_t getMeasurementPoll(int16_t* pMeasurand);
-    uint8_t MeasureHM(etSHT2xMeasureType eSHT2xMeasureType, int16_t *pMeasurand);
     uint8_t SoftReset();
     float CalcRH(uint16_t u16sRH);
     float CalcTemperatureC(uint16_t u16sT);
