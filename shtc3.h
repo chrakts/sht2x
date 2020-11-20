@@ -2,12 +2,13 @@
 #define SHTC3_H
 
 #include "twi_master_driver.h"
+#include "util/delay.h"
 
 #define TWI_ADDRESS                 0x70
 #define SHTC3_SLEEP                 0xB098
 #define SHTC3_WAKEUP                0x3517
 #define SHTC3_RESET                 0x805D
-#define SHTC3_GETID                 0xEFC8
+#define SHTC3_GETID                 0xEFC8 // original
 #define SHTC3_NORMAL_CLST_T_FIRST   0x7CA2
 #define SHTC3_NORMAL_CLST_RH_FIRST  0x5C24
 #define SHTC3_NORMAL_T_FIRST        0x7866
@@ -30,15 +31,19 @@ class shtc3
     void reset();
     bool command(uint16_t com);
     uint16_t getID();
-    bool getResults(double &temperature, double &humidity);
+    bool readResults();
+    bool getResults(volatile double &temperature, volatile double &humidity);
     bool verifyCRC(uint8_t *data);
-    uint8_t calculateCrc8(uint8_t crc8, uint8_t data);
+
+    uint8_t calculateCrc8(uint8_t crc, const void *data, uint8_t data_len);
     uint16_t get16Value(uint8_t *data);
+    double calcDewPoint(double t,double h);
+    double calcAbsHumi(double t,double h);
   protected:
 
   private:
     TWI_MasterDriver_t *_twi;
-    uint16_t _mode;
+    uint16_t _mode=SHTC3_NORMAL_CLST_T_FIRST;
 };
 
 #endif // SHTC3_H

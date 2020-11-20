@@ -12,8 +12,8 @@ shtc3::~shtc3()
 
 void shtc3::begin(TWI_MasterDriver_t *twi)
 {
-  sleep();
   _twi = twi;
+  //sleep();
 }
 
 void shtc3::setMode(uint16_t mode)
@@ -43,8 +43,14 @@ bool shtc3::startMeasure()
 
 uint16_t shtc3::getID()
 {
-  command(SHTC3_GETID);
-  TWI_MasterRead(_twi,TWI_ADDRESS,3);
+uint8_t data[2];
+  data[0] = SHTC3_GETID>>8;
+  data[1] = SHTC3_GETID&0xff;
+  TWI_MasterWriteRead(_twi,TWI_ADDRESS,data,2,3);
+	while (_twi->status != TWIM_STATUS_READY)
+  {
+
+	}
   if( verifyCRC(_twi->readData) )
   {
     return( get16Value(_twi->readData) );
@@ -56,6 +62,10 @@ uint16_t shtc3::getID()
 bool shtc3::command(uint16_t com)
 {
 uint8_t data[2];
+	while (_twi->status != TWIM_STATUS_READY)
+  {
+
+	}
   data[0] = uint8_t(com>>8);
   data[1] = uint8_t(com&0xff);
   return( TWI_MasterWrite(_twi,TWI_ADDRESS,data,2) );
@@ -66,13 +76,21 @@ uint16_t shtc3::get16Value(uint8_t *data)
 uint16_t result;
   result=(uint16_t)data[0];
   result<<=8;
-  result |= data[1];
+  result |= (uint16_t)data[1];
   return(result);
 }
 
-bool shtc3::getResults(double &temperature, double &humidity)
+bool shtc3::readResults()
 {
-  TWI_MasterRead(_twi,TWI_ADDRESS,6);
+   return( TWI_MasterRead(_twi,TWI_ADDRESS,6) );
+}
+
+bool shtc3::getResults(volatile double &temperature, volatile double &humidity)
+{
+	while (_twi->status != TWIM_STATUS_READY)
+  {
+
+	}
   temperature = (double) get16Value(_twi->readData);
   humidity    = (double) get16Value( &(_twi->readData[3]) );
   temperature = temperature/374.491428571-45.0;
@@ -82,24 +100,48 @@ bool shtc3::getResults(double &temperature, double &humidity)
 bool shtc3::verifyCRC(uint8_t *data)
 {
 uint8_t crc;
-  crc = calculateCrc8(0xff, data[0]);
-  crc = calculateCrc8(crc, data[1]);
+  crc = calculateCrc8(0xff, data,2);
   return(data[2]==crc);
 }
 
-uint8_t shtc3::calculateCrc8(uint8_t crc8, uint8_t data)
+uint8_t shtc3::calculateCrc8(uint8_t crc, const void *data, uint8_t data_len)
 {
-  crc8 = crc8 ^ data;
-  for (int i = 0; i < 8; i++)
-  {
-    if (crc8 & 1)
-    {
-      crc8 = (crc8 >> 1) ^ 0x8c;
+    const unsigned char *d = (const unsigned char *)data;
+    unsigned int i;
+    bool bit;
+    unsigned char c;
+
+    while (data_len--) {
+        c = *d++;
+        for (i = 0x80; i > 0; i >>= 1) {
+            bit = crc & 0x80;
+            if (c & i) {
+                bit = !bit;
+            }
+            crc <<= 1;
+            if (bit) {
+                crc ^= 0x31;
+            }
+        }
+        crc &= 0xff;
     }
-    else
-    {
-      crc8 = (crc8 >> 1);
-    }
-  }
-  return crc8;
+    return crc & 0xff;
+}
+
+double shtc3::calcDewPoint(double t,double h)
+{
+double k,dew_point ;
+	k = (log10(h)-2)/0.4343 + (17.62*t)/(243.12+t);
+	dew_point = 243.12*k/(17.62-k);
+	return dew_point;
+}
+
+double shtc3::calcAbsHumi(double t,double h)
+{
+const double a = 7.5, b = 237.3 ;
+const double R = 8314.3, mw = 18.016;
+
+double DD;
+	DD = h/100 * 6.1078 * pow(10,(a*t)/(b+t));
+	return(10e5 * mw/R * DD/(t+273.15));
 }
