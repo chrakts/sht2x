@@ -177,6 +177,7 @@ float SHT2::CalcTemperatureC(uint16_t u16sT)
   u16sT >>= 2;
   //-- calculate temperature [°C] --
   temperatureC= -46.85 + 0.010725098 *(float)u16sT; //T= -46.85 + 175.72 * ST/2^16
+  temperatureC= temperatureC+T_KAL_P0 + temperatureC*T_KAL_P1 ; // Kalibrierung
   return temperatureC;
 }
 
